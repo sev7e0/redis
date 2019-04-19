@@ -1,0 +1,3 @@
+/Users/sev7e0/workspace/cl-workspace/redis/cmake-build-debug/CMakeFiles/rebuild_cache.dir
+/Users/sev7e0/workspace/cl-workspace/redis/cmake-build-debug/CMakeFiles/edit_cache.dir
+/Users/sev7e0/workspace/cl-workspace/redis/cmake-build-debug/CMakeFiles/redis.dir
