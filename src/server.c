@@ -72,31 +72,32 @@ double R_Zero, R_PosInf, R_NegInf, R_Nan;
 struct redisServer server; /* Server global state */
 volatile unsigned long lru_clock; /* Server global current LRU time. */
 
-/* Our command table.
- *
+/* command table.
+ * 命令表
  * Every entry is composed of the following fields:
+ * 每个条目都包含以下字段：
  *
- * name: a string representing the command name.
- * function: pointer to the C function implementing the command.
- * arity: number of arguments, it is possible to use -N to say >= N
+ * name: 命令名称
+ * function: 每个指令对应的实现函数.
+ * arity: 每条命令的参数个数，用于校验命令格式是否正确
  * sflags: command flags as string. See below for a table of flags.
  * flags: flags as bitmask. Computed by Redis using the 'sflags' field.
  * get_keys_proc: an optional function to get key arguments from a command.
  *                This is only used when the following three fields are not
  *                enough to specify what arguments are keys.
- * first_key_index: first argument that is a key
- * last_key_index: last argument that is a key
- * key_step: step to get all the keys from first to last argument. For instance
- *           in MSET the step is two since arguments are key,val,key,val,...
- * microseconds: microseconds of total execution time for this command.
- * calls: total number of calls of this command.
+ * first_key_index: first argument that is a key 第一个参数是关键
+ * last_key_index: last argument that is a key最后一个论点是关键
+ * key_step: 从第一个到最后一个参数获取所有键的步骤。例如
+ *           在MSET中，步骤为2，因为参数是key，val，key，val，...
+ * microseconds: 此命令的总执行时间的微秒。
+ * calls：此命令的总调用次数。
  *
- * The flags, microseconds and calls fields are computed by Redis and should
- * always be set to zero.
+ * flags，microseconds和calls字段由Redis计算并且应该始终设置为零。
  *
  * Command flags are expressed using strings where every character represents
- * a flag. Later the populateCommandTable() function will take care of
- * populating the real 'flags' field using this characters.
+ * a flag. 稍后populateCommandTable（）函数将负责使用此字符填充真实的“标志”字段。
+ *
+ * flags使用一个字符俩表示每一个flag，
  *
  * This is the meaning of the flags:
  *
@@ -123,6 +124,9 @@ volatile unsigned long lru_clock; /* Server global current LRU time. */
  *    its execution as long as the kernel scheduler is giving us time.
  *    Note that commands that may trigger a DEL as a side effect (like SET)
  *    are not fast commands.
+ */
+/*
+ * 命令表
  */
 struct redisCommand redisCommandTable[] = {
     {"module",moduleCommand,-2,"as",0,NULL,0,0,0,0,0},

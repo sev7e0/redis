@@ -1320,14 +1320,15 @@ typedef struct pubsubPattern {
 
 typedef void redisCommandProc(client *c);
 typedef int *redisGetKeysProc(struct redisCommand *cmd, robj **argv, int argc, int *numkeys);
-struct redisCommand {
-    char *name;
-    redisCommandProc *proc;
-    int arity;
-    char *sflags; /* Flags as string representation, one char per flag. */
-    int flags;    /* The actual flags, obtained from the 'sflags' field. */
-    /* Use a function to determine keys arguments in a command line.
-     * Used for Redis Cluster redirect. */
+struct redisCommand  {
+    char *name;  /*命令的名字*/
+    redisCommandProc *proc; /*命令的函数指针，用于指向每个命令对应的函数*/
+    int arity; /*命令参数的个数，用于检查输入命令的格式是否正确*/
+    char *sflags; /* flags的字符串表示, 每个字符代表一个flag. */
+    int flags;    /* 从'sflags'字段获得的实际标志。 为二进制形式，服务器对其进行检查时
+ * 使用的都是该属性，应为方便进行逻辑运算 & ^ |* /
+    / *使用函数确定命令行中的键参数。
+     *用于Redis群集重定向。 */
     redisGetKeysProc *getkeys_proc;
     /* What keys should be loaded in background when calling this command? */
     int firstkey; /* The first argument that's a key (0 = no keys) */
