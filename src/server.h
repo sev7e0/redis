@@ -709,6 +709,9 @@ typedef struct readyList {
 
 /* With multiplexing we need to take per-client state.
  * Clients are taken in a linked list. */
+/*
+ * 客户端状态结构定义
+ */
 typedef struct client {
     uint64_t id;            /* Client incremental unique ID. */
     int fd;                 /* Client socket. */
@@ -727,16 +730,35 @@ typedef struct client {
     int reqtype;            /* Request protocol type: PROTO_REQ_* */
     int multibulklen;       /* Number of multi bulk arguments left to read. */
     long bulklen;           /* Length of bulk argument in multi bulk request. */
+    /*
+     * 可变大小的输出缓冲区，由列表构成
+     */
     list *reply;            /* List of reply objects to send to the client. */
     unsigned long long reply_bytes; /* Tot bytes of objects in reply list. */
     size_t sentlen;         /* Amount of bytes already sent in the current
                                buffer or object being sent. */
-    time_t ctime;           /* Client creation time. */
+    /*
+     * 客户端创建时间
+     */
+    time_t ctime;           /* Client creation time.*/
+    /*
+     * 最后一次C-S互动的时间，可以是服务器回复，也可以是客户端请求
+     */
     time_t lastinteraction; /* Time of the last interaction, used for timeout */
+    /*
+     * 记录输出缓冲区第一次到达软性限制的时间
+     */
     time_t obuf_soft_limit_reached_time;
+
+
     int flags;              /* Client flags: CLIENT_* macros. */
-    int authenticated;      /* When requirepass is non-NULL. */
-    int replstate;          /* Replication state if this is a slave. */
+    /*
+     * 客户端的身份状态验证，当为0时，除了auth命令其他所有命令都会被拒绝。
+     *
+     * 若没有启用身份验证，则所有命令都会被执行。
+     */
+    int authenticated;      /* 当requirepass非NULL时。 */
+    int replstate;          /* 复制状态，如果这是slave节点. */
     int repl_put_online_on_ack; /* Install slave write handler on ACK. */
     int repldbfd;           /* Replication DB file descriptor. */
     off_t repldboff;        /* Replication DB file offset. */
@@ -764,6 +786,9 @@ typedef struct client {
     listNode *client_list_node; /* list node in client list */
 
     /* Response buffer */
+    /*
+     * 输出缓冲区，固定大小
+     */
     int bufpos;
     char buf[PROTO_REPLY_CHUNK_BYTES];
 } client;
@@ -1245,6 +1270,9 @@ struct redisServer {
                                       REDISMODULE_CLUSTER_FLAG_*. */
     /* Scripting */
     lua_State *lua; /* The Lua interpreter. We use just one for all clients */
+    /*
+     * lua命令使用的伪客户端，该客户端会一直存在，直到服务器被关闭
+     */
     client *lua_client;   /* The "fake client" to query Redis from Lua */
     client *lua_caller;   /* The client running EVAL right now, or NULL */
     dict *lua_scripts;         /* A dictionary of SHA1 -> Lua scripts */

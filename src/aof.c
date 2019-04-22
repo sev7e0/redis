@@ -658,7 +658,9 @@ void freeFakeClientArgv(struct client *c) {
         decrRefCount(c->argv[j]);
     zfree(c->argv);
 }
-
+/*
+ * aof恢复使用的伪客户端，在恢复完成立即关闭使用的函数。
+ */
 void freeFakeClient(struct client *c) {
     sdsfree(c->querybuf);
     listRelease(c->reply);
@@ -877,6 +879,9 @@ loaded_ok: /* DB loaded, cleanup and return C_OK to the caller. */
 
 readerr: /* Read error. If feof(fp) is true, fall through to unexpected EOF. */
     if (!feof(fp)) {
+        /*
+         * 立即关闭伪客户端
+         */
         if (fakeClient) freeFakeClient(fakeClient); /* avoid valgrind warning */
         serverLog(LL_WARNING,"Unrecoverable error reading the append only file: %s", strerror(errno));
         exit(1);

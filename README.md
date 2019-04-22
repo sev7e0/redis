@@ -3,22 +3,24 @@ This README is just a fast *quick start* document. You can find more detailed do
 What is Redis?
 --------------
 
-Redis is often referred as a *data structures* server. What this means is that Redis provides access to mutable data structures via a set of commands, which are sent using a *server-client* model with TCP sockets and a simple protocol. So different processes can query and modify the same data structures in a shared way.
+Redis通常被称为*数据结构*服务器. 这意味着Redis通过一组命令提供对可变数据结构的访问，
+这些命令使用带有TCP套接字和简单协议的* server-client *模型发送。因此，不同的进程
+可以以共享方式查询和修改相同的数据结构。
 
-Data structures implemented into Redis have a few special properties:
+Redis中实现的数据结构有一些特殊属性：
 
-* Redis cares to store them on disk, even if they are always served and modified into the server memory. This means that Redis is fast, but that is also non-volatile.
-* Implementation of data structures stress on memory efficiency, so data structures inside Redis will likely use less memory compared to the same data structure modeled using an high level programming language.
-* Redis offers a number of features that are natural to find in a database, like replication, tunable levels of durability, cluster, high availability.
+* Redis关心将它们存储在磁盘上，即使它们总是被提供并修改到服务器内存中。这意味着Redis速度很快，但这也是非易失性的。
+* 数据结构的实现强调内存效率，因此与使用高级编程语言建模的相同数据结构相比，Redis内部的数据结构可能会使用更少的内存。
+* Redis提供了许多在数据库中很容易找到的功能，如复制，可调节的持久性，群集，高可用。
 
-Another good example is to think of Redis as a more complex version of memcached, where the operations are not just SETs and GETs, but operations to work with complex data types like Lists, Sets, ordered data structures, and so forth.
+另一个很好的例子是将Redis视为memcached的更复杂版本，其中操作不仅仅是SET和GET，而是用于处理复杂数据类型（如Lists，Sets，有序数据结构等）的操作。
 
-If you want to know more, this is a list of selected starting points:
+如果您想了解更多信息，请参阅选定的起点列表：
 
-* Introduction to Redis data types. http://redis.io/topics/data-types-intro
-* Try Redis directly inside your browser. http://try.redis.io
-* The full list of Redis commands. http://redis.io/commands
-* There is much more inside the Redis official documentation. http://redis.io/documentation
+* Redis数据类型简介。 http://redis.io/topics/data-types-intro
+* 直接在浏览器中试用Redis。 http://try.redis.io
+* Redis命令的完整列表。 http://redis.io/commands
+* Redis官方文档中有更多内容。 http://redis.io/documentation
 
 Building Redis
 --------------
@@ -27,36 +29,40 @@ Redis can be compiled and used on Linux, OSX, OpenBSD, NetBSD, FreeBSD.
 We support big endian and little endian architectures, and both 32 bit
 and 64 bit systems.
 
-It may compile on Solaris derived systems (for instance SmartOS) but our
-support for this platform is *best effort* and Redis is not guaranteed to
-work as well as in Linux, OSX, and \*BSD there.
+redis支持多种平台和架构，Linux, OSX, OpenBSD, NetBSD, FreeBSD。同时支持 big endian
+和little endian架构，还包括32位和64位操作系统。
 
-It is as simple as:
+It may compile on Solaris derived systems (for instance SmartOS) but our support for this platform is *best effort* and Redis is not guaranteed to work as well as in Linux, OSX, and \*BSD there.
+
+同时他可以在一些其他的衍生版本中进行编译例如Solaris的SmartOS，但对这些平台只能是尽力而为
+无法保证。
+
+
+编译命令:
 
     % make
 
-You can run a 32 bit Redis binary using:
+可以使用运行32位Redis二进制文件:
 
     % make 32bit
 
-After building Redis, it is a good idea to test it using:
+编译后可以进行测试:
 
     % make test
 
 Fixing build problems with dependencies or cached build options
 ---------
 
-Redis has some dependencies which are included into the `deps` directory.
-`make` does not automatically rebuild dependencies even if something in
-the source code of dependencies changes.
+在`deps`文件夹中包含了一些redis的依赖，若依赖文件发生变化，在`make` 使用时并不会自动的重新构建。
 
-When you update the source code with `git pull` or when code inside the
-dependencies tree is modified in any other way, make sure to use the following
-command in order to really clean everything and rebuild from scratch:
+
+
+当你使用了`git pull`重新拉取代码或者其他方式修改了依赖文件时，请使用一下命令进行清理和
+重新构建。
 
     make distclean
 
-This will clean: jemalloc, lua, hiredis, linenoise.
+这将会清理: jemalloc, lua, hiredis, linenoise.
 
 Also if you force certain build options like 32bit target, no C compiler
 optimizations (for debugging purposes), and other similar build time options,
@@ -105,31 +111,27 @@ If you want to see a more verbose output use the following:
 Running Redis
 -------------
 
-To run Redis with the default configuration just type:
+使用默认配置启动redis:
 
     % cd src
     % ./redis-server
 
-If you want to provide your redis.conf, you have to run it using an additional
-parameter (the path of the configuration file):
+指定配置文件的方式启动redis:
 
     % cd src
     % ./redis-server /path/to/redis.conf
 
-It is possible to alter the Redis configuration by passing parameters directly
-as options using the command line. Examples:
+可以在启动时传递参数，进行相关的redis配置:
 
     % ./redis-server --port 9999 --replicaof 127.0.0.1 6379
     % ./redis-server /etc/redis/6379.conf --loglevel debug
 
-All the options in redis.conf are also supported as options using the command
-line, with exactly the same name.
+在redis.conf中所有的配置都支持使用该方式进行配置。
 
 Playing with Redis
 ------------------
 
-You can use redis-cli to play with Redis. Start a redis-server instance,
-then in another terminal try the following:
+在启动redis后可以启动一个新的terminal执行redis-cli，执行以下操作:
 
     % cd src
     % ./redis-cli
@@ -145,7 +147,7 @@ then in another terminal try the following:
     (integer) 2
     redis>
 
-You can find the list of all the available commands at http://redis.io/commands.
+使用更多的命令，请参考 http://redis.io/commands.
 
 Installing Redis
 -----------------
@@ -202,21 +204,29 @@ continuously, but a general idea should be a good starting point to
 understand more. Moreover most of the code is heavily commented and easy
 to follow.
 
+若果你正在github上阅读这个自述文件，或者你打开了redis.tar，那么你距离redis源码只有
+一步之遥，所以在这将会介绍以下redis的源码布局，包括每一个文件中的内容是什么，和redis
+内部一些重要的功能和数据结构。在这里只会讨论一些最高层面的东西，不会深入到细节中讨论，
+因为这个文件很大，否则代码库就会改变不断，但一般的想法应该是从一个简单的起点了解更
+多。此外，大多数代码都有很多注释。
+
 Source code layout
 ---
 
-The Redis root directory just contains this README, the Makefile which
-calls the real Makefile inside the `src` directory and an example
-configuration for Redis and Sentinel. You can find a few shell
-scripts that are used in order to execute the Redis, Redis Cluster and
-Redis Sentinel unit tests, which are implemented inside the `tests`
-directory.
+Redis根目录只包含这个README，即Makefile调用`src`目录中的实际Makefile和一个例子
+Redis和Sentinel的配置。你可以找到一些shell用于执行Redis，Redis群集和Redis Sentinel
+单元测试，在`tests`中实现目录。
 
-Inside the root are the following important directories:
+在根目录中将会看到以下文件夹:
 
-* `src`: contains the Redis implementation, written in C.
-* `tests`: contains the unit tests, implemented in Tcl.
-* `deps`: contains libraries Redis uses. Everything needed to compile Redis is inside this directory; your system just needs to provide `libc`, a POSIX compatible interface and a C compiler. Notably `deps` contains a copy of `jemalloc`, which is the default allocator of Redis under Linux. Note that under `deps` there are also things which started with the Redis project, but for which the main repository is not `antirez/redis`. An exception to this rule is `deps/geohash-int` which is the low level geocoding library used by Redis: it originated from a different project, but at this point it diverged so much that it is developed as a separated entity directly inside the Redis repository.
+* `src`: 包含了redis的具体实现，使用C语言编写。
+* `tests`: 包含了一些测试单元, 使用 Tcl 实现.
+* `deps`: 包含Redis使用的库. 编译Redis所需的一切都在这个目录中;你的系统只需要提供`
+    libc`，POSIX兼容接口和C编译器。值得注意的是，“deps”包含了一个`jemalloc`的副本，
+    它是Linux下Redis的默认分配器。请注意，在`deps`下也有从Redis项目开始的东西，但主
+    存储库不是`antirez / redis`。这个规则的一个例外是`deps / geohash-int`，它是
+    Redis使用的低级地理编码库：它源自一个不同的项目，但此时它分歧太多，以至于它被直接
+    开发为一个独立的实体。 Redis存储库。
 
 There are a few more directories but they are not very important for our goals
 here. We'll focus mostly on `src`, where the Redis implementation is contained,

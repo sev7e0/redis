@@ -753,6 +753,12 @@ static int cliSelect(void) {
  *      CC_FORCE: The connection is performed even if there is already
  *                a connected socket.
  *      CC_QUIET: Don't print errors if connection fails. */
+/*
+ * 客户端链接服务器的函数，参数作为区分连接方式的标志
+ *
+ * CC_FORCE：即使已连接套接字，也会执行连接。
+ * CC_QUIET：安静模式，不会打印相关日志
+ */
 static int cliConnect(int flags) {
     if (context == NULL || flags & CC_FORCE) {
         if (context != NULL) {
