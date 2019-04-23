@@ -441,8 +441,7 @@ cleanup:
     return error_type;
 }
 
-/* Format a command according to the Redis protocol. This function
- * takes a format similar to printf:
+/* 根据Redis协议格式化命令. 此函数采用类似于printf的格式：
  *
  * %s represents a C null terminated string you want to interpolate
  * %b represents a binary safe string
@@ -898,7 +897,7 @@ int redisGetReply(redisContext *c, void **reply) {
 }
 
 
-/* Helper function for the redisAppendCommand* family of functions.
+/* redisAppendCommand *函数系列的辅助函数。
  *
  * Write a formatted command to the output buffer. When this family
  * is used, you need to call redisGetReply yourself to retrieve

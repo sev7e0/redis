@@ -501,11 +501,11 @@ static void cliInitHelp(void) {
     }
 }
 
-/* cliInitHelp() setups the helpEntries array with the command and group
- * names from the help.h file. However the Redis instance we are connecting
- * to may support more commands, so this function integrates the previous
- * entries with additional entries obtained using the COMMAND command
- * available in recent versions of Redis. */
+/* cliInitHelp（）使用命令和组设置helpEntries数组
+ * help.h文件中的名称。但是我们正在连接的Redis实例可能支持更多
+ * 命令，因此该功能集成了以前的功能使用COMMAND命令获得的附加条
+ * 目的条目可在最新版本的Redis中使用。
+ * */
 static void cliIntegrateHelp(void) {
     if (cliConnect(CC_QUIET) == REDIS_ERR) return;
 
@@ -7058,13 +7058,18 @@ int main(int argc, char **argv) {
     else
         config.output = OUTPUT_STANDARD;
     config.mb_delim = sdsnew("\n");
-
+    /*
+     * 解析参数 argc参数个数 argv参数
+     */
     firstarg = parseOptions(argc,argv);
     argc -= firstarg;
     argv += firstarg;
 
     parseEnv();
 
+    /*
+     * 判断客户端模式
+     */
     /* Cluster Manager mode */
     if (CLUSTER_MANAGER_MODE()) {
         clusterManagerCommandProc *proc = validateClusterManagerCommand();

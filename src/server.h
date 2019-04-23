@@ -725,15 +725,15 @@ typedef struct client {
                                the master. */
     size_t querybuf_peak;   /* Recent (100ms or more) peak of querybuf size. */
     int argc;               /* Num of arguments of current command. */
-    robj **argv;            /* Arguments of current command. */
-    struct redisCommand *cmd, *lastcmd;  /* Last command executed. */
+    robj **argv;            /* 当前命令的参数。 */
+    struct redisCommand *cmd/*执行命令 在本文件的1326行具体定义*/, *lastcmd;  /* 执行上一个命令。 */
     int reqtype;            /* Request protocol type: PROTO_REQ_* */
     int multibulklen;       /* Number of multi bulk arguments left to read. */
     long bulklen;           /* Length of bulk argument in multi bulk request. */
     /*
      * 可变大小的输出缓冲区，由列表构成
      */
-    list *reply;            /* List of reply objects to send to the client. */
+    list *reply;            /* 要发送到客户端的回复对象列表。 */
     unsigned long long reply_bytes; /* Tot bytes of objects in reply list. */
     size_t sentlen;         /* Amount of bytes already sent in the current
                                buffer or object being sent. */
@@ -1320,6 +1320,9 @@ typedef struct pubsubPattern {
 
 typedef void redisCommandProc(client *c);
 typedef int *redisGetKeysProc(struct redisCommand *cmd, robj **argv, int argc, int *numkeys);
+/*
+ * client中使用到的cmd对象
+ */
 struct redisCommand  {
     char *name;  /*命令的名字*/
     redisCommandProc *proc; /*命令的函数指针，用于指向每个命令对应的函数*/

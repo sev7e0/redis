@@ -80,11 +80,10 @@ volatile unsigned long lru_clock; /* Server global current LRU time. */
  * name: 命令名称
  * function: 每个指令对应的实现函数.
  * arity: 每条命令的参数个数，用于校验命令格式是否正确
- * sflags: command flags as string. See below for a table of flags.
- * flags: flags as bitmask. Computed by Redis using the 'sflags' field.
- * get_keys_proc: an optional function to get key arguments from a command.
- *                This is only used when the following three fields are not
- *                enough to specify what arguments are keys.
+ * sflags: 命令标志为字符串。请参阅下面的标志表.
+ * flags: flags as 位掩码. 用于计算.
+ * get_keys_proc: 一个可选函数，用于从命令中获取关键参数.
+ *                仅在以下三个字段不使用时才使用此选项以指定键是什么参数.
  * first_key_index: first argument that is a key 第一个参数是关键
  * last_key_index: last argument that is a key最后一个论点是关键
  * key_step: 从第一个到最后一个参数获取所有键的步骤。例如
@@ -104,7 +103,7 @@ volatile unsigned long lru_clock; /* Server global current LRU time. */
  * w: write command (may modify the key space).
  * r: read command  (will never modify the key space).
  * m: may increase memory usage once called. Don't allow if out of memory.
- * a: admin command, like SAVE or SHUTDOWN.
+ * a: 管理员命令admin command, like SAVE or SHUTDOWN.
  * p: Pub/Sub related command.
  * f: force replication of this command, regardless of server.dirty.
  * s: command not allowed in scripts.
@@ -129,7 +128,8 @@ volatile unsigned long lru_clock; /* Server global current LRU time. */
  * 命令表
  */
 struct redisCommand redisCommandTable[] = {
-    {"module",moduleCommand,-2,"as",0,NULL,0,0,0,0,0},
+        /*name，  对应的实现函数   参数个数  操作标志位  flags默认0    可选函数       执行时间   调用次数 */
+        {"module",moduleCommand,  -2,     "as",     0,          NULL,   0,0,0,  0       ,0},
     {"get",getCommand,2,"rF",0,NULL,1,1,1,0,0},
     {"set",setCommand,-3,"wm",0,NULL,1,1,1,0,0},
     {"setnx",setnxCommand,3,"wmF",0,NULL,1,1,1,0,0},
@@ -1706,6 +1706,9 @@ void initServerConfig(void) {
      * redis.conf using the rename-command directive. */
     server.commands = dictCreate(&commandTableDictType,NULL);
     server.orig_commands = dictCreate(&commandTableDictType,NULL);
+    /*
+     * 开始填充命令表
+     */
     populateCommandTable();
     server.delCommand = lookupCommandByCString("del");
     server.multiCommand = lookupCommandByCString("multi");
@@ -1721,7 +1724,7 @@ void initServerConfig(void) {
     server.xclaimCommand = lookupCommandByCString("xclaim");
     server.xgroupCommand = lookupCommandByCString("xgroup");
 
-    /* Slow log */
+    /* 慢日志相关配置 */
     server.slowlog_log_slower_than = CONFIG_DEFAULT_SLOWLOG_LOG_SLOWER_THAN;
     server.slowlog_max_len = CONFIG_DEFAULT_SLOWLOG_MAX_LEN;
 
@@ -2067,7 +2070,7 @@ void initServer(void) {
     server.db = zmalloc(sizeof(redisDb)*server.dbnum);
 
     /* Open the TCP listening socket for the user commands. */
-    /**
+    /*
      * 打开监听，接受客户端命令
      */
     if (server.port != 0 &&
@@ -2171,7 +2174,7 @@ void initServer(void) {
     }
 
     /* Open the AOF file if needed. */
-    /**
+    /*
      * 在配置了aof的情况下，读取并恢复aof文件，读取失败这整个服务停止
      */
     if (server.aof_state == AOF_ON) {
@@ -2188,7 +2191,7 @@ void initServer(void) {
      * no explicit limit in the user provided configuration we set a limit
      * at 3 GB using maxmemory with 'noeviction' policy'. This avoids
      * useless crashes of the Redis instance for out of memory. */
-    /**
+    /*
      * 作为内存数据库，redis对内存有较多的需求，由于32位的只能识别4g的内存，
      * redis会计算并提示，需要配置最大内存3GB，以方式redis实例导致内存溢出。
      *
@@ -2199,7 +2202,7 @@ void initServer(void) {
         server.maxmemory_policy = MAXMEMORY_NO_EVICTION;
     }
 
-    /**
+    /*
      * 若配置了集群，这会在这一步开始集群的配置
      */
     if (server.cluster_enabled) clusterInit();
@@ -2211,11 +2214,11 @@ void initServer(void) {
     server.initial_memory_usage = zmalloc_used_memory();
 }
 
-/* Populates the Redis Command Table starting from the hard coded list
+/* 从硬编码列表开始填充Redis命令表,也就是对flags属性进行填充，使用定义好的值进行异或运算
  * we have on top of redis.c file. */
 void populateCommandTable(void) {
     int j;
-    int numcommands = sizeof(redisCommandTable)/sizeof(struct redisCommand);
+    int numcommands = sizeof( redisCommandTable)/sizeof(struct redisCommand);
 
     for (j = 0; j < numcommands; j++) {
         struct redisCommand *c = redisCommandTable+j;
@@ -2243,7 +2246,7 @@ void populateCommandTable(void) {
         }
 
         retval1 = dictAdd(server.commands, sdsnew(c->name), c);
-        /* Populate an additional dictionary that will be unaffected
+        /* 填充不受影响的其他字典
          * by rename-command statements in redis.conf. */
         retval2 = dictAdd(server.orig_commands, sdsnew(c->name), c);
         serverAssert(retval1 == DICT_OK && retval2 == DICT_OK);
