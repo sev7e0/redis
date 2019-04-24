@@ -1091,7 +1091,7 @@ void updateCachedTime(void) {
  */
 
  /**
-  *  服务器周期性操作，默认每隔100毫秒执行一次。
+  *  服务器周期性操作，默认每隔100毫秒执行一次。 十分重要
   * @param eventLoop
   * @param id
   * @param clientData
@@ -1133,7 +1133,7 @@ int serverCron(struct aeEventLoop *eventLoop, long long id, void *clientData) {
                 server.stat_net_output_bytes);
     }
 
-    /* We have just LRU_BITS bits per object for LRU information.
+    /* 对于LRU信息，每个对象只有LRU_BITS位。
      * So we use an (eventually wrapping) LRU clock.
      *
      * Note that even if the counter wraps it's not a big problem,
@@ -1145,9 +1145,14 @@ int serverCron(struct aeEventLoop *eventLoop, long long id, void *clientData) {
      * Note that you can change the resolution altering the
      * LRU_CLOCK_RESOLUTION define. */
     unsigned long lruclock = getLRUClock();
+    /*
+     * 每个redis对象都有lruclock的属性，默认每十秒更新一次
+     *
+     * 可以用来计算当前对象的空转时间，为LRUcache提供依据
+     */
     atomicSet(server.lruclock,lruclock);
 
-    /* Record the max memory used since the server was started. */
+    /* 记录自服务器启动以来使用的最大内存。 */
     if (zmalloc_used_memory() > server.stat_peak_memory)
         server.stat_peak_memory = zmalloc_used_memory();
 
