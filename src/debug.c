@@ -1395,6 +1395,9 @@ void watchdogSignalHandler(int sig, siginfo_t *info, void *secret) {
 /* Schedule a SIGALRM delivery after the specified period in milliseconds.
  * If a timer is already scheduled, this function will re-schedule it to the
  * specified time. If period is 0 the current timer is disabled. */
+/*
+ * 如果已经设定了定时器，那么该函数将会重新配置根据给的时间，若时间为0 则表示关闭定时器
+ */
 void watchdogScheduleSignal(int period) {
     struct itimerval it;
 

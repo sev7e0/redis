@@ -754,6 +754,9 @@ void tryResizeHashTables(int dbid) {
  * table will use two tables for a long time. So we try to use 1 millisecond
  * of CPU time at every call of this function to perform some rehahsing.
  *
+ * 我们的哈希表实现在我们从哈希表中写入/读取时逐步执行rehashing。仍然如果服务器空闲，
+ * hash *表将长时间使用两个表。因此，我们尝试在每次调用此函数时使用1毫秒*的CPU时间来执行一些重新生成。
+ *
  * The function returns 1 if some rehashing was performed, otherwise 0
  * is returned. */
 int incrementallyRehash(int dbid) {
@@ -786,6 +789,9 @@ void updateDictResizePolicy(void) {
 /* ======================= Cron: called every 100 ms ======================== */
 
 /* Add a sample to the operations per second array of samples. */
+/*
+ * 将样本添加到每秒样本数组的操作中。
+ */
 void trackInstantaneousMetric(int metric, long long current_reading) {
     long long t = mstime() - server.inst_metric[metric].last_sample_time;
     long long ops = current_reading -
@@ -951,6 +957,8 @@ void getExpansiveClientsInfo(size_t *in_usage, size_t *out_usage) {
  * operations on clients that are important to perform constantly. For instance
  * we use this function in order to disconnect clients after a timeout, including
  * clients blocked in some blocking command with a non-zero timeout.
+ *此函数由serverCron（）调用，用于在不断执行的重要客户端上执行*操作。例如*我们使用此
+ * 函数以在超时后断开客户端连接，包括*客户端在某些阻塞命令中被阻止且具有非零超时。
  *
  * The function makes some effort to process all the clients every second, even
  * if this cannot be strictly guaranteed, since serverCron() may be called with
@@ -1001,6 +1009,9 @@ void clientsCron(void) {
 /* This function handles 'background' operations we are required to do
  * incrementally in Redis databases, such as active key expiring, resizing,
  * rehashing. */
+/*
+ * 该函数负责后台操作，需要在Redis数据库中以递增方式执行，例如键的过期，调整，重新hash
+ */
 void databasesCron(void) {
     /* Expire keys by random sampling. Not required for slaves
      * as master will synthesize DELs for us. */
@@ -1057,6 +1068,10 @@ void databasesCron(void) {
  * virtual memory and aging there is to store the current time in objects at
  * every object access, and accuracy is not needed. To access a global var is
  * a lot faster than calling time(NULL) */
+/*
+ * 在全局状态中获取unix时间的缓存值，因为使用虚拟内存和老化时，在每个对象访问时将对象中
+ * 的当前时间存储起来，并且不需要准确性。访问全局var比调用时间快得多（NULL）
+ */
 void updateCachedTime(void) {
     time_t unixtime = time(NULL);
     atomicSet(server.unixtime,unixtime);
@@ -1105,9 +1120,12 @@ int serverCron(struct aeEventLoop *eventLoop, long long id, void *clientData) {
 
     /* Software watchdog: deliver the SIGALRM that will reach the signal
      * handler if we don't return here fast enough. */
+    /*
+     * 当配置中配置了时间时，按照配置时间启动调度计划
+     */
     if (server.watchdog_period) watchdogScheduleSignal(server.watchdog_period);
 
-    /* Update the time cache. */
+    /* 更新时间缓存 */
     updateCachedTime();
 
     server.hz = server.config_hz;
@@ -1233,6 +1251,9 @@ int serverCron(struct aeEventLoop *eventLoop, long long id, void *clientData) {
     }
 
     /* Check if a background saving or AOF rewrite in progress terminated. */
+    /*
+     * 检查正在进行后台保存或AOF重写是否已终止
+     */
     if (server.rdb_child_pid != -1 || server.aof_child_pid != -1 ||
         ldbPendingChildren())
     {
@@ -1278,7 +1299,8 @@ int serverCron(struct aeEventLoop *eventLoop, long long id, void *clientData) {
              * successful or if, in case of an error, at least
              * CONFIG_BGSAVE_RETRY_DELAY seconds already elapsed. */
             /**
-             * 保存，如果我们达到给定的更改量，给定的秒数，如果最新的bgsave成功，或者如果出现错误，至少已经过了CONFIG_BGSAVE_RETRY_DELAY秒。
+             * 保存，如果我们达到给定的更改量，给定的秒数，如果最新的bgsave成功，或者如果出现错误
+             * ，至少已经过了CONFIG_BGSAVE_RETRY_DELAY秒。
              */
             if (server.dirty >= sp->changes &&
                 server.unixtime-server.lastsave > sp->seconds &&
@@ -1298,6 +1320,9 @@ int serverCron(struct aeEventLoop *eventLoop, long long id, void *clientData) {
         }
 
         /* Trigger an AOF rewrite if needed. */
+        /*
+         * 需要的化触发，aof重写操作啊
+         */
         if (server.aof_state == AOF_ON &&
             server.rdb_child_pid == -1 &&
             server.aof_child_pid == -1 &&
@@ -1329,6 +1354,9 @@ int serverCron(struct aeEventLoop *eventLoop, long long id, void *clientData) {
     }
 
     /* Close clients that need to be closed asynchronous */
+    /*
+     * 关闭需要异步关闭的客户端
+     */
     freeClientsInAsyncFreeQueue();
 
     /* Clear the paused clients flag if needed. */

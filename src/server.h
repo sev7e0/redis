@@ -449,6 +449,9 @@ typedef long long mstime_t; /* millisecond time type. */
 /* Using the following macro you can run code inside serverCron() with the
  * specified period, specified in milliseconds.
  * The actual resolution depends on server.hz. */
+/*
+ * 使用以下宏，可以使用指定的时间段（以毫秒为单位）在serverCron（）内运行代码。 实际hz取决于server.hz。
+ */
 #define run_with_period(_ms_) if ((_ms_ <= 1000/server.hz) || !(server.cronloops%((_ms_)/(1000/server.hz))))
 
 /* We can print the stacktrace, so our assert is defined this way: */
@@ -960,7 +963,7 @@ struct redisServer {
     int dynamic_hz;             /* Change hz value depending on # of clients. */
     int config_hz;              /* Configured HZ value. May be different than
                                    the actual 'hz' field value if dynamic-hz
-                                   is enabled. */
+                                   is enabled. 配置HZ值。如果启用了dynamic-hz，则可能与实际的'hz'字段值不同。*/
     int hz;                     /* serverCron() calls frequency in hertz */
     redisDb *db;
     dict *commands;             /* Command table */
@@ -1302,7 +1305,7 @@ struct redisServer {
     const char *assert_file;
     int assert_line;
     int bug_report_start; /* True if bug report header was already logged. */
-    int watchdog_period;  /* Software watchdog period in ms. 0 = off */
+    int watchdog_period;  /* 软件看门狗周期以ms为单位。为0时关闭 */
     /* System hardware info */
     size_t system_memory_size;  /* Total memory in system as reported by OS */
 
