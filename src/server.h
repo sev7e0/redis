@@ -775,7 +775,7 @@ typedef struct client {
                                        copying this slave output buffer
                                        should use. */
     char replid[CONFIG_RUN_ID_SIZE+1]; /* Master replication ID (if master). */
-    int slave_listening_port; /* As configured with: SLAVECONF listening-port */
+    int slave_listening_port; /* As configured with: SLAVECONF listening-port  slave的端口号*/
     char slave_ip[NET_IP_STR_LEN]; /* Optionally given by REPLCONF ip-address */
     int slave_capa;         /* Slave capabilities: SLAVE_CAPA_* bitwise OR. */
     multiState mstate;      /* MULTI/EXEC state */
@@ -1176,8 +1176,20 @@ struct redisServer {
     int repl_diskless_sync;         /* Send RDB to slaves sockets directly. */
     int repl_diskless_sync_delay;   /* Delay to start a diskless repl BGSAVE. */
     /* Replication (slave) */
+    /* 复制的实现
+     *
+     * 作为复制的从节点时用到的属性，使用SLAVEOF命令时传递，
+     * 命令格式为 SLAVEOF auth host port，在保存了主服务器的信息后，
+     * 当前从服务器将会向主服务器建立连接，并且当前从服务器在主服务器的眼
+     * 里将会被视为一个普通的客户端。
+     *
+     * slaveof 为异步命令
+     */
+    //主节点的密码
     char *masterauth;               /* AUTH with this password with master */
+    //主节点的host
     char *masterhost;               /* Hostname of master */
+    //主节点的端口
     int masterport;                 /* Port of master */
     int repl_timeout;               /* Timeout after N seconds of master idle */
     client *master;     /* Client that is master for this slave */

@@ -2011,7 +2011,11 @@ void replicationHandleMasterDisconnection(void) {
 
 void replicaofCommand(client *c) {
     /* SLAVEOF is not allowed in cluster mode as replication is automatically
-     * configured using the current address of the master node. */
+     * configured using the current address of the master node.
+     * 使用主节点的当前地址进行配置。*/
+    /*
+     * 不能使用cluster模式
+     */
     if (server.cluster_enabled) {
         addReplyError(c,"REPLICAOF not allowed in cluster mode.");
         return;
@@ -2526,20 +2530,30 @@ long long replicationGetSlaveOffset(void) {
 /* --------------------------- REPLICATION CRON  ---------------------------- */
 
 /* Replication cron function, called 1 time per second. */
+/*
+ * 复制的核心函数，每一秒被调用一次
+ */
 void replicationCron(void) {
     static long long replication_cron_loops = 0;
 
     /* Non blocking connection timeout? */
+    /*
+     * 检测是够连接到master，使用PING命令
+     */
     if (server.masterhost &&
         (server.repl_state == REPL_STATE_CONNECTING ||
          slaveIsInHandshakeState()) &&
          (time(NULL)-server.repl_transfer_lastio) > server.repl_timeout)
     {
         serverLog(LL_WARNING,"Timeout connecting to the MASTER...");
+        //超时则取消复制
         cancelReplicationHandshake();
     }
 
     /* Bulk transfer I/O timeout? */
+    /*
+     * 检测传输文件是否超时
+     */
     if (server.masterhost && server.repl_state == REPL_STATE_TRANSFER &&
         (time(NULL)-server.repl_transfer_lastio) > server.repl_timeout)
     {
@@ -2556,10 +2570,16 @@ void replicationCron(void) {
     }
 
     /* Check if we should connect to a MASTER */
+    /*
+     * 检测是否应该进行连接
+     */
     if (server.repl_state == REPL_STATE_CONNECT) {
         serverLog(LL_NOTICE,"Connecting to MASTER %s:%d",
             server.masterhost, server.masterport);
         if (connectWithMaster() == C_OK) {
+            /*
+             * 连接成功后打印日志
+             */
             serverLog(LL_NOTICE,"MASTER <-> REPLICA sync started");
         }
     }
@@ -2567,6 +2587,9 @@ void replicationCron(void) {
     /* Send ACK to master from time to time.
      * Note that we do not send periodic acks to masters that don't
      * support PSYNC and replication offsets. */
+    /*
+     * 向master发送确认信息
+     */
     if (server.masterhost && server.master &&
         !(server.master->flags & CLIENT_PRE_PSYNC))
         replicationSendAck();
@@ -2603,6 +2626,14 @@ void replicationCron(void) {
      * last interaction timer preventing a timeout. In this case we ignore the
      * ping period and refresh the connection once per second since certain
      * timeouts are set at a few seconds (example: PSYNC response). */
+    /*
+     * 向所有slave发送换行，等待生成RDB文件
+     *
+     * 当当前的节点的master超时时，也要保证当前节点的slave节点直到状态，会向
+     * 其发送换行符，以此来刷新超时时间。保证不被断开
+     *
+     * ping周期并每秒刷新一次连接，因为某些*超时设置为几秒（例如：PSYNC响应）。
+     */
     listRewind(server.slaves,&li);
     while((ln = listNext(&li))) {
         client *slave = ln->value;
@@ -2620,6 +2651,9 @@ void replicationCron(void) {
     }
 
     /* Disconnect timedout slaves. */
+    /*
+     * 断开超时的slave
+     */
     if (listLength(server.slaves)) {
         listIter li;
         listNode *ln;
@@ -2689,6 +2723,8 @@ void replicationCron(void) {
     /* Start a BGSAVE good for replication if we have slaves in
      * WAIT_BGSAVE_START state.
      *
+     * 如果我们的子设备处于* WAIT_BGSAVE_START状态，则启动BGSAVE以便复制。
+     *
      * In case of diskless replication, we make sure to wait the specified
      * number of seconds (according to configuration) so that other slaves
      * have the time to arrive before we start streaming. */
@@ -2718,6 +2754,9 @@ void replicationCron(void) {
             /* Start the BGSAVE. The called function may start a
              * BGSAVE with socket target or disk target depending on the
              * configuration and slaves capabilities. */
+            /*
+             * 为复制启动bgsave操作
+             */
             startBgsaveForReplication(mincapa);
         }
     }

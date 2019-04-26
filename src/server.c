@@ -1364,6 +1364,9 @@ int serverCron(struct aeEventLoop *eventLoop, long long id, void *clientData) {
 
     /* Replication cron function -- used to reconnect to master,
      * detect transfer failures, start background RDB transfers and so forth. */
+    /*
+     * 复制cron函数 - 用于重新连接到master，*检测传输失败，启动后台RDB传输等等。
+     */
     run_with_period(1000) replicationCron();
 
     /* Run the Redis Cluster cron. */
@@ -1690,6 +1693,7 @@ void initServerConfig(void) {
     appendServerSaveParams(60,10000); /* save after 1 minute and 10000 changes */
 
     /* Replication related */
+    /*复制相关的初始化*/
     server.masterauth = NULL;
     server.masterhost = NULL;
     server.masterport = 6379;
