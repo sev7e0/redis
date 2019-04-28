@@ -2497,9 +2497,12 @@ void clusterBroadcastPong(int target) {
 
     di = dictGetSafeIterator(server.cluster->nodes);
     while((de = dictNext(di)) != NULL) {
+        //根据节点名获取节点信息
         clusterNode *node = dictGetVal(de);
 
+        //若不存在节点信息，则跳过
         if (!node->link) continue;
+        //若node为当前节点自己，或者节点在抖动的状态，则跳过
         if (node == myself || nodeInHandshake(node)) continue;
         if (target == CLUSTER_BROADCAST_LOCAL_SLAVES) {
             int local_slave =
@@ -2507,8 +2510,10 @@ void clusterBroadcastPong(int target) {
                 (node->slaveof == myself || node->slaveof == myself->slaveof);
             if (!local_slave) continue;
         }
+        //发送pong回应
         clusterSendPing(node->link,CLUSTERMSG_TYPE_PONG);
     }
+    //释放当前节点
     dictReleaseIterator(di);
 }
 

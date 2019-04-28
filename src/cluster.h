@@ -38,11 +38,22 @@
 struct clusterNode;
 
 /* clusterLink encapsulates everything needed to talk with a remote node. */
+//clusterLink封装了与远程节点通信所需的一切。
+
+/*
+ * redisClient结构和clusterLink的区别，套接字和缓冲区cluterLink是用于链接节点的，
+ * redisClient适用于链接客户端的。
+ */
 typedef struct clusterLink {
+    //连接创建时间
     mstime_t ctime;             /* Link creation time */
+    //套接字描述符
     int fd;                     /* TCP socket file descriptor */
+    //输出缓冲区
     sds sndbuf;                 /* Packet send buffer */
+    //输入缓冲区
     sds rcvbuf;                 /* Packet reception buffer */
+    //与这个节点相关联的节点，没有的话默认为空
     struct clusterNode *node;   /* Node related to this link if any, or NULL */
 } clusterLink;
 
@@ -113,39 +124,64 @@ typedef struct clusterNodeFailReport {
     mstime_t time;             /* Time of the last report from this node. */
 } clusterNodeFailReport;
 
+/*
+ * 集群数据结构
+ */
 typedef struct clusterNode {
+    //节点对象创建时间
     mstime_t ctime; /* Node object creation time. */
+    //集群名称
     char name[CLUSTER_NAMELEN]; /* Node name, hex string, sha1-size */
+    //节点标示，用于区分主从节点的问题
     int flags;      /* CLUSTER_NODE_... */
+    //当前节点的配置纪元，用于进行故障转移
     uint64_t configEpoch; /* Last configEpoch observed for this node */
+    //此节点处理的插槽
     unsigned char slots[CLUSTER_SLOTS/8]; /* slots handled by this node */
+    //此节点处理的插槽数
     int numslots;   /* Number of slots handled by this node */
     int numslaves;  /* Number of slave nodes, if this is a master */
+    //slave节点数，当前节点为主节点
     struct clusterNode **slaves; /* pointers to slave nodes */
+    //指向主节点的指针。请注意，如果我们的表中没有主节点，则即使节点是从节点也可能为NULL。
     struct clusterNode *slaveof; /* pointer to the master node. Note that it
                                     may be NULL even if the node is a slave
                                     if we don't have the master node in our
                                     tables. */
+    //最后一次发送ping
     mstime_t ping_sent;      /* Unix time we sent latest ping */
+    //收到pong
     mstime_t pong_received;  /* Unix time we received the pong */
     mstime_t fail_time;      /* Unix time when FAIL flag was set */
     mstime_t voted_time;     /* Last time we voted for a slave of this master */
     mstime_t repl_offset_time;  /* Unix time we received offset for this node */
     mstime_t orphaned_time;     /* Starting time of orphaned master condition */
     long long repl_offset;      /* Last known repl offset for this node. */
+    //节点的ip地址
     char ip[NET_IP_STR_LEN];  /* Latest known IP address of this node */
+    //节点的端口
     int port;                   /* Latest known clients port of this node */
     int cport;                  /* Latest known cluster port of this node. */
+    //与此节点的TCP / IP链接
     clusterLink *link;          /* TCP/IP link with this node */
     list *fail_reports;         /* List of nodes signaling this as failing */
 } clusterNode;
 
+/*
+ * 用于保存集群状态
+ */
 typedef struct clusterState {
+    //当前节点的指针
     clusterNode *myself;  /* This node */
+    //集群纪元
     uint64_t currentEpoch;
+    //集群当前状态，在线，还是下线
     int state;            /* CLUSTER_OK, CLUSTER_FAIL, ... */
+    //集群中至少处理这一个槽的节点数辆
     int size;             /* Num of master nodes with at least one slot */
+    //名字的hash表，value为clusterNode
     dict *nodes;          /* Hash table of name -> clusterNode structures */
+    //几秒内不会再被加入到集群中的节点
     dict *nodes_black_list; /* Nodes we don't re-add for a few seconds. */
     clusterNode *migrating_slots_to[CLUSTER_SLOTS];
     clusterNode *importing_slots_from[CLUSTER_SLOTS];

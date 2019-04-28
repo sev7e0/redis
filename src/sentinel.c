@@ -4512,6 +4512,10 @@ void sentinelTimer(void) {
      * exactly continue to stay synchronized asking to be voted at the
      * same time again and again (resulting in nobody likely winning the
      * election because of split brain voting). */
+    /*我们不断改变Redis“定时器中断”*的频率，以便使每个Sentinel彼此不同步。
+     * 这种非确定性避免了哨兵在同一时间开始完全继续保持同步，要求在同一时间一次又一次
+     * 地投票（导致没有人因为分裂大脑投票而赢得选举）。
+     * */
     server.hz = CONFIG_DEFAULT_HZ + rand() % CONFIG_DEFAULT_HZ;
 }
 
