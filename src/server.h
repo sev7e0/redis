@@ -649,18 +649,26 @@ typedef struct redisDb {
 
 /* Client MULTI/EXEC state */
 typedef struct multiCmd {
+    //参数
     robj **argv;
+    //参数数量
     int argc;
+    //命令函数指针。用于找到命令对应的函数
     struct redisCommand *cmd;
 } multiCmd;
 
 typedef struct multiState {
+    //一个事务中需要执行的命令
     multiCmd *commands;     /* Array of MULTI commands */
+    //命令数
     int count;              /* Total number of MULTI commands */
+    //命令标志位
     int cmd_flags;          /* The accumulated command flags OR-ed together.
                                So if at least a command has a given flag, it
                                will be set in this field. */
+    //用于同步复制
     int minreplicas;        /* MINREPLICAS for synchronous replication */
+    //同步复制超时时间
     time_t minreplicas_timeout; /* MINREPLICAS timeout as unixtime. */
 } multiState;
 
@@ -778,6 +786,9 @@ typedef struct client {
     int slave_listening_port; /* As configured with: SLAVECONF listening-port  slave的端口号*/
     char slave_ip[NET_IP_STR_LEN]; /* Optionally given by REPLCONF ip-address */
     int slave_capa;         /* Slave capabilities: SLAVE_CAPA_* bitwise OR. */
+    /*
+     * 用于标记当前客户端状态是否为事务模式
+     */
     multiState mstate;      /* MULTI/EXEC state */
     int btype;              /* Type of blocking op if CLIENT_BLOCKED. */
     blockingState bpop;     /* blocking state */

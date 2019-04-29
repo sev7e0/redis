@@ -826,6 +826,7 @@ int loadAppendOnlyFile(char *filename) {
         if (fakeClient->flags & CLIENT_MULTI &&
             fakeClient->cmd->proc != execCommand)
         {
+            //若当前客户端为事务状态则添加到队列中
             queueMultiCommand(fakeClient);
         } else {
             cmd->proc(fakeClient);

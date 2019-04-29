@@ -2613,6 +2613,9 @@ void call(client *c, int flags) {
  * If C_OK is returned the client is still alive and valid and
  * other operations can be performed by the caller. Otherwise
  * if C_ERR is returned the client was destroyed (i.e. after QUIT). */
+/*
+ * 处理命令的函数
+ */
 int processCommand(client *c) {
     /* The QUIT command is handled separately. Normal command procs will
      * go through checking for replication and QUIT will cause trouble
@@ -2792,10 +2795,14 @@ int processCommand(client *c) {
     }
 
     /* Exec the command */
+    /*
+     * 判断当前客户端状态为CLIENT_MULTI，且发送的命令不是discard exec multi watch等命令
+     */
     if (c->flags & CLIENT_MULTI &&
         c->cmd->proc != execCommand && c->cmd->proc != discardCommand &&
         c->cmd->proc != multiCommand && c->cmd->proc != watchCommand)
     {
+        //若当前客户端标志位为事务状态，则添加到事务队列中
         queueMultiCommand(c);
         addReply(c,shared.queued);
     } else {
