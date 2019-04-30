@@ -321,7 +321,6 @@ void freeZsetObject(robj *o) {
         serverPanic("Unknown sorted set encoding");
     }
 }
-
 void freeHashObject(robj *o) {
     switch (o->encoding) {
     case OBJ_ENCODING_HT:

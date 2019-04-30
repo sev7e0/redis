@@ -1295,27 +1295,40 @@ struct redisServer {
                                       native Redis Cluster features. Check the
                                       REDISMODULE_CLUSTER_FLAG_*. */
     /* Scripting */
+    /*
+     * lua脚本的翻译器，所有客户端共用一个
+     */
     lua_State *lua; /* The Lua interpreter. We use just one for all clients */
     /*
      * lua命令使用的伪客户端，该客户端会一直存在，直到服务器被关闭
      */
     client *lua_client;   /* The "fake client" to query Redis from Lua */
     client *lua_caller;   /* The client running EVAL right now, or NULL */
+    /*
+     * lua的字典，key为脚本的SHA1计算而来，value为脚本
+     */
     dict *lua_scripts;         /* A dictionary of SHA1 -> Lua scripts */
     unsigned long long lua_scripts_mem;  /* Cached scripts' memory + oh */
+    //超时时间
     mstime_t lua_time_limit;  /* Script timeout in milliseconds */
+    //开始执行时间
     mstime_t lua_time_start;  /* Start time of script, milliseconds time */
+    //若执行期间调用了write命令
     int lua_write_dirty;  /* True if a write command was called during the
                              execution of the current script. */
+    //执行期间若使用了random命令
     int lua_random_dirty; /* True if a random command was called during the
                              execution of the current script. */
     int lua_replicate_commands; /* True if we are doing single commands repl. */
+    //如果已经使MULTI成功，那就是真的。
     int lua_multi_emitted;/* True if we already proagated MULTI. */
     int lua_repl;         /* Script replication flags for redis.set_repl(). */
+    //若达到了超时时间则为true
     int lua_timedout;     /* True if we reached the time limit for script
                              execution. */
+    //kill命令杀掉脚本则为
     int lua_kill;         /* Kill the script if true. */
-    int lua_always_replicate_commands; /* Default replication type. */
+    int lua_always_replicate_commands; /* 默认复制类型。 */
     /* Lazy free */
     int lazyfree_lazy_eviction;
     int lazyfree_lazy_expire;

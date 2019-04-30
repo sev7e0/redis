@@ -1172,6 +1172,20 @@ int redis_math_randomseed (lua_State *L) {
  *
  * If 'c' is not NULL, on error the client is informed with an appropriate
  * error describing the nature of the problem and the Lua interpreter error. */
+
+/*
+ * 一下主要介绍EVAL命令和SCRIPT命令的实现
+ */
+/*
+ * luaCreateFunction是用来创建一个lua函数，函数名将会使用f_<hex sha1 sum>来实现，也就是说所有的函数
+ * 结构都是一个样子只不过名和函数体不一样。
+ *
+ * 该函数将“body”对象的引用计数递增，作为成功调用的副作用。
+ *
+ * 成功的话将会返回一串字符，也就是sha
+ *
+    如果'c'不为NULL，则出错时会通过适当的错误通知客户端，该错误描述问题的性质和Lua解释器错误。
+ */
 sds luaCreateFunction(client *c, lua_State *lua, robj *body) {
     char funcname[43];
     dictEntry *de;
@@ -1179,19 +1193,21 @@ sds luaCreateFunction(client *c, lua_State *lua, robj *body) {
     funcname[0] = 'f';
     funcname[1] = '_';
     sha1hex(funcname+2,body->ptr,sdslen(body->ptr));
-
+    //生成新的函数名
     sds sha = sdsnewlen(funcname+2,40);
     if ((de = dictFind(server.lua_scripts,sha)) != NULL) {
         sdsfree(sha);
         return dictGetKey(de);
     }
 
+    //构造函数
     sds funcdef = sdsempty();
     funcdef = sdscat(funcdef,"function ");
     funcdef = sdscatlen(funcdef,funcname,42);
     funcdef = sdscatlen(funcdef,"() ",3);
     funcdef = sdscatlen(funcdef,body->ptr,sdslen(body->ptr));
     funcdef = sdscatlen(funcdef,"\nend",4);
+
 
     if (luaL_loadbuffer(lua,funcdef,sdslen(funcdef),"@user_script")) {
         if (c != NULL) {
@@ -1219,6 +1235,10 @@ sds luaCreateFunction(client *c, lua_State *lua, robj *body) {
     /* We also save a SHA1 -> Original script map in a dictionary
      * so that we can replicate / write in the AOF all the
      * EVALSHA commands as EVAL using the original script. */
+    /*
+     * 在字典中保存SHA1->原始脚本映射，以便可以使用原始脚本在AOF中将所有EVALSHA命令复制/写入EVAL。
+     * 可以免去再次计算SHA1的时间
+     */
     int retval = dictAdd(server.lua_scripts,sha,body);
     serverAssertWithInfo(c ? c : server.lua_client,NULL,retval == DICT_OK);
     server.lua_scripts_mem += sdsZmallocSize(sha) + getStringObjectSdsUsedMemory(body);
@@ -1313,17 +1333,22 @@ void evalGenericCommand(client *c, int evalsha) {
     lua_getglobal(lua, "__redis__err__handler");
 
     /* Try to lookup the Lua function */
+    //根据函数名尝试查找Lua函数
     lua_getglobal(lua, funcname);
     if (lua_isnil(lua,-1)) {
+        //如果是nil那么移除该函数
         lua_pop(lua,1); /* remove the nil from the stack */
         /* Function not defined... let's define it if we have the
          * body of the function. If this is an EVALSHA call we can just
          * return an error. */
+        //若evalsha为1则说明evalSha被调用，那么将返回错误
         if (evalsha) {
             lua_pop(lua,1); /* remove the error handler from the stack. */
+            //将错误放入输出缓冲区
             addReply(c, shared.noscripterr);
             return;
         }
+        //定义函数
         if (luaCreateFunction(c,lua,c->argv[1]) == NULL) {
             lua_pop(lua,1); /* remove the error handler from the stack. */
             /* The error is sent to the client by luaCreateFunction()
@@ -1331,16 +1356,21 @@ void evalGenericCommand(client *c, int evalsha) {
             return;
         }
         /* Now the following is guaranteed to return non nil */
+        //现在再去获取，能够保证获取到的函数相关部位nil
         lua_getglobal(lua, funcname);
         serverAssert(!lua_isnil(lua,-1));
     }
 
     /* Populate the argv and keys table accordingly to the arguments that
      * EVAL received. */
+    /*
+     * 将EVAL命令接受到的参数和key进行保存
+     */
     luaSetGlobalArray(lua,"KEYS",c->argv+3,numkeys);
     luaSetGlobalArray(lua,"ARGV",c->argv+3+numkeys,c->argc-3-numkeys);
 
     /* Select the right DB in the context of the Lua client */
+    //选择lua客户端中保存的db
     selectDb(server.lua_client,c->db->id);
 
     /* Set a hook in order to be able to stop the script execution if it
@@ -1350,6 +1380,13 @@ void evalGenericCommand(client *c, int evalsha) {
      *
      * If we are debugging, we set instead a "line" hook so that the
      * debugger is call-back at every line executed by the script. */
+    /*
+     * 设定一个钩子是为了防止脚本执行时间过长
+     *
+     * 只有在限制执行时间时才会用到hook，因为这回降低lua执行的效率
+     *
+     * 如果我们在debug中使用了一个line hook那么每条line执行都会调用
+     */
     server.lua_caller = c;
     server.lua_time_start = mstime();
     server.lua_kill = 0;
