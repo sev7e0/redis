@@ -1594,7 +1594,7 @@ void evalShaCommand(client *c) {
 }
 
 /*
- * 脚本相关命令
+ * 脚本相关命令的实现与原理
  *
  * debug：进入dubug模式执行脚本
  * exits：检测要执行的脚本是否在脚本缓存中，根据sha1实现
@@ -1603,6 +1603,7 @@ void evalShaCommand(client *c) {
  * load：将脚本加载到脚本缓存中，但是不执行他
  */
 void scriptCommand(client *c) {
+    //help命令的实现与返回
     if (c->argc == 2 && !strcasecmp(c->argv[1]->ptr,"help")) {
         const char *help[] = {
 "DEBUG (yes|sync|no) -- Set the debug mode for subsequent scripts executed.",
@@ -1613,11 +1614,19 @@ void scriptCommand(client *c) {
 NULL
         };
         addReplyHelp(c, help);
+        /*
+         * flush命令的关键步骤
+         */
     } else if (c->argc == 2 && !strcasecmp(c->argv[1]->ptr,"flush")) {
+        //重置命令
         scriptingReset();
         addReply(c,shared.ok);
         replicationScriptCacheFlush();
+        //传播命令，时缓存失效
         server.dirty++; /* Propagating this command is a good idea. */
+        /*
+         * 检测脚本是否已经存在
+         */
     } else if (c->argc >= 2 && !strcasecmp(c->argv[1]->ptr,"exists")) {
         int j;
 
@@ -1628,6 +1637,9 @@ NULL
             else
                 addReply(c,shared.czero);
         }
+        /*
+         * 载入脚本，但不执行
+         */
     } else if (c->argc == 3 && !strcasecmp(c->argv[1]->ptr,"load")) {
         sds sha = luaCreateFunction(c,server.lua,c->argv[2]);
         if (sha == NULL) return; /* The error was sent by luaCreateFunction(). */
@@ -1644,6 +1656,9 @@ NULL
             server.lua_kill = 1;
             addReply(c,shared.ok);
         }
+        /*
+         * 在执行命令时进入debug模式
+         */
     } else if (c->argc == 3 && !strcasecmp(c->argv[1]->ptr,"debug")) {
         if (clientHasPendingReplies(c)) {
             addReplyError(c,"SCRIPT DEBUG must be called outside a pipeline");
