@@ -854,6 +854,9 @@ void luaLoadLibraries(lua_State *lua) {
 
 /* Remove a functions that we don't want to expose to the Redis scripting
  * environment. */
+/*
+ * 移除不想在redis脚本环境中暴露的函数
+ */
 void luaRemoveUnsupportedFunctions(lua_State *lua) {
     lua_pushnil(lua);
     lua_setglobal(lua,"loadfile");
@@ -866,6 +869,9 @@ void luaRemoveUnsupportedFunctions(lua_State *lua) {
  *
  * It should be the last to be called in the scripting engine initialization
  * sequence, because it may interact with creation of globals. */
+/*
+ * 在脚本引擎初始化序列中调用的最后一个，因为它可能与全局变量的创建相互作用。
+ */
 void scriptingEnableGlobalsProtection(lua_State *lua) {
     char *s[32];
     sds code = sdsempty();
@@ -910,9 +916,24 @@ void scriptingEnableGlobalsProtection(lua_State *lua) {
  * in order to reset the Lua scripting environment.
  *
  * However it is simpler to just call scriptingReset() that does just that. */
+/*
+ * 初始化脚本环境，并进行一些修改
+ *
+ * 函数第一次调用是在服务器启动时，step参数将会被设置为1
+ *
+ * 在redis执行期间函数亦可以被多次调用，届时step将会被设置为0。
+ *
+ * 同时在scriptingRelease函数后也会被调用，目的是为了重置lua脚本环境。
+ * 重置环境只需要调用scriptingReset函数就可以了
+ */
 void scriptingInit(int setup) {
+    /*
+     * 调用lua的api创建一个基本的lua环境，
+     * 为了满足redis，接下来将会进行一些修改。
+     */
     lua_State *lua = lua_open();
 
+    //启动服务时才会执行
     if (setup) {
         server.lua_client = NULL;
         server.lua_caller = NULL;
@@ -920,18 +941,32 @@ void scriptingInit(int setup) {
         ldbInit();
     }
 
+    //加载相关库文件
     luaLoadLibraries(lua);
+    //移除不想在redis脚本环境中暴露的函数
     luaRemoveUnsupportedFunctions(lua);
 
     /* Initialize a dictionary we use to map SHAs to scripts.
      * This is useful for replication, as we need to replicate EVALSHA
      * as EVAL, so we need to remember the associated script. */
+    /*
+     * 创建lua字典表，用于在脚本中的复制，因为需要将EVALSHA复制为EVAL，因此需要记住相关的
+     * 脚本
+     *
+     * 结构是 {sha,script}
+     */
     server.lua_scripts = dictCreate(&shaScriptObjectDictType,NULL);
     server.lua_scripts_mem = 0;
 
     /* Register the redis commands table and fields */
+    //注册redis命令表和字段
+    //用来存储lua的命令
     lua_newtable(lua);
 
+    /*
+     * 以下都是lua中使用的相关函数进行注册
+     * 使用方式是： redis.call()这种
+     */
     /* redis.call */
     lua_pushstring(lua,"call");
     lua_pushcfunction(lua,luaRedisCallCommand);
@@ -1034,6 +1069,14 @@ void scriptingInit(int setup) {
 
     /* Add a helper function that we use to sort the multi bulk output of non
      * deterministic commands, when containing 'false' elements. */
+    /*
+     * 添加一个辅助函数，用于在包含'false'元素时对非确定性命令的多批量输出进行排序。
+     *
+     * 在redis中使用lua要避免一些不确定性来避免副作用，那对于集合操作来说，由于集合是无序的
+     * 那么就算集合元素完全相同在输出时也一定是不同的，所以同一个集合会产生不一致的数据，redis
+     * 为了解决这个问题，添加了一个辅助排序函数，当执行完带有不确定性的函数时，redis会使用该函数
+     * 进行排序，保证每一次的输出都是相同的。
+     */
     {
         char *compare_func =    "function __redis__compare_helper(a,b)\n"
                                 "  if a == false then a = '' end\n"
@@ -1048,6 +1091,11 @@ void scriptingInit(int setup) {
      * Note that when the error is in the C function we want to report the
      * information about the caller, that's what makes sense from the point
      * of view of the user debugging a script. */
+    /*
+     * 创建一个pcall的错误报告辅助函数
+     *
+     * 在命令执行期间出现错误的话将会将错误报告给调用者。
+     */
     {
         char *errh_func =       "local dbg = debug\n"
                                 "function __redis__err__handler(err)\n"
@@ -1069,6 +1117,11 @@ void scriptingInit(int setup) {
      * inside the Lua interpreter.
      * Note: there is no need to create it again when this function is called
      * by scriptingReset(). */
+    /*
+     * 在lua的解释器中创建一个伪客户端，为的是执行redis相关的命令。
+     *
+     * 注意，此处不需要在scriptingReset调用时重复创建。
+     */
     if (server.lua_client == NULL) {
         server.lua_client = createClient(-1);
         server.lua_client->flags |= CLIENT_LUA;
@@ -1077,6 +1130,11 @@ void scriptingInit(int setup) {
     /* Lua beginners often don't use "local", this is likely to introduce
      * subtle bugs in their code. To prevent problems we protect accesses
      * to global variables. */
+    /*
+     * 服务器将对lua环境中的全局环境进行保护，确保传入的脚本不会因为忘记使用local
+     * 关键字而将额外的全局变量添加到lua环境中。当脚本试图创建一个全局变量时，服务器
+     * 将会报告一个错误
+     */
     scriptingEnableGlobalsProtection(lua);
 
     server.lua = lua;
@@ -1084,14 +1142,23 @@ void scriptingInit(int setup) {
 
 /* Release resources related to Lua scripting.
  * This function is used in order to reset the scripting environment. */
+/*
+ * 释放脚本相关的资源，主要包括脚本字典、内存、关闭lua
+ *
+ * 该函数是为了重置lua环境
+ */
 void scriptingRelease(void) {
     dictRelease(server.lua_scripts);
     server.lua_scripts_mem = 0;
     lua_close(server.lua);
 }
 
+/*
+ * 脚本重置
+ */
 void scriptingReset(void) {
     scriptingRelease();
+    //重新初始化lua环境
     scriptingInit(0);
 }
 
@@ -1118,6 +1185,13 @@ void luaSetGlobalArray(lua_State *lua, char *var, robj **elev, int elec) {
 
 /* The following implementation is the one shipped with Lua itself but with
  * rand() replaced by redisLrand48(). */
+/*
+ * redis实现的随机函数，为了替换lua原生库中的随机函数到来的副作用。
+ * 副作用就是每次的生成的数值不同。
+ *
+ * redis实现的能够根据lua_State生成相同的函数值。
+ *
+ */
 int redis_math_random (lua_State *L) {
   /* the `%' avoids the (rare) case of r==1, and is needed also because on
      some systems (SunOS!) `rand()' may return a value larger than RAND_MAX */
@@ -1519,6 +1593,15 @@ void evalShaCommand(client *c) {
     }
 }
 
+/*
+ * 脚本相关命令
+ *
+ * debug：进入dubug模式执行脚本
+ * exits：检测要执行的脚本是否在脚本缓存中，根据sha1实现
+ * flush：清空脚本缓存中的数据
+ * kill：杀掉当前正在执行的脚本
+ * load：将脚本加载到脚本缓存中，但是不执行他
+ */
 void scriptCommand(client *c) {
     if (c->argc == 2 && !strcasecmp(c->argv[1]->ptr,"help")) {
         const char *help[] = {
