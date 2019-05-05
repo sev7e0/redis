@@ -84,7 +84,14 @@ void listRelease(list *list)
  *
  * On error, NULL is returned and no operation is performed (i.e. the
  * list remains unaltered).
- * On success the 'list' pointer you pass to the function is returned. */
+ * On success the 'list' pointer you pass to the function is returned.
+ * ------------------------------------------------------------------
+ * 在指定的list的头部添加节点。
+ *
+ * 若发生像内存申请错误等错误将会返回null
+ *
+ * 成功将会返回整个list
+ * */
 list *listAddNodeHead(list *list, void *value)
 {
     listNode *node;
@@ -163,7 +170,12 @@ list *listInsertNode(list *list, listNode *old_node, void *value, int after) {
 /* Remove the specified node from the specified list.
  * It's up to the caller to free the private value of the node.
  *
- * This function can't fail. */
+ * This function can't fail.
+ * ------------------------------------
+ * 在指定的list中移除指定的节点
+ *
+ * 该函数不能失败
+ * */
 void listDelNode(list *list, listNode *node)
 {
     if (node->prev)

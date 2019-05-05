@@ -1,5 +1,4 @@
-/* Slowlog implements a system that is able to remember the latest N
- * queries that took more than M microseconds to execute.
+/* Slowlog implements a system that is able to remember the latest N queries that took more than M microseconds to execute.
  *
  * The execution time to reach to be logged in the slow log is set
  * using the 'slowlog-log-slower-than' config directive, that is also
@@ -9,33 +8,13 @@
  * but is accessible thanks to the SLOWLOG command.
  *
  * ----------------------------------------------------------------------------
+ * slowlog慢日志是redis中一个的系统，他能够记住redis中最近的m毫秒内，n个被执行的查询。
  *
- * Copyright (c) 2009-2012, Salvatore Sanfilippo <antirez at gmail dot com>
- * All rights reserved.
+ * 使用'slowlog-log-slow-than'config指令设置要记录在慢速日志中的执行时间，该指令也
+ * 可以使用CONFIG SET / GET命令进行读写。
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
+ * 慢查询日志的实现并没有使用redis的日志文件，能够查询慢日志是因为SLOWLOG指令
  *
- *   * Redistributions of source code must retain the above copyright notice,
- *     this list of conditions and the following disclaimer.
- *   * Redistributions in binary form must reproduce the above copyright
- *     notice, this list of conditions and the following disclaimer in the
- *     documentation and/or other materials provided with the distribution.
- *   * Neither the name of Redis nor the names of its contributors may be used
- *     to endorse or promote products derived from this software without
- *     specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
  */
 
 
@@ -44,7 +23,12 @@
 
 /* Create a new slowlog entry.
  * Incrementing the ref count of all the objects retained is up to
- * this function. */
+ * this function.
+ * ------------------------------------------------------------
+ * 创建一个新的慢日志entry
+ *
+ * 增加保留的所有对象的引用计数取决于此功能。
+ */
 slowlogEntry *slowlogCreateEntry(client *c, robj **argv, int argc, long long duration) {
     slowlogEntry *se = zmalloc(sizeof(*se));
     int j, slargc = argc;
@@ -93,10 +77,14 @@ slowlogEntry *slowlogCreateEntry(client *c, robj **argv, int argc, long long dur
     return se;
 }
 
-/* Free a slow log entry. The argument is void so that the prototype of this
- * function matches the one of the 'free' method of adlist.c.
+/* Free a slow log entry. The argument is void so that the prototype of this function matches the one of the 'free' method of adlist.c.
  *
- * This function will take care to release all the retained object. */
+ * This function will take care to release all the retained object.
+ * ----------------------------------------------------------------
+ * 释放一个slowlog entry，该函数的原型与adlist.c的'free'方法匹配。
+ *
+ * 此功能将注意释放所有保留的对象。
+ * -*/
 void slowlogFreeEntry(void *septr) {
     slowlogEntry *se = septr;
     int j;
@@ -110,7 +98,10 @@ void slowlogFreeEntry(void *septr) {
 }
 
 /* Initialize the slow log. This function should be called a single time
- * at server startup. */
+ * at server startup.
+ * ---------------------------------------------------------------------
+ * 初始化slow log该函数只有在server启动时调用
+ * */
 void slowlogInit(void) {
     server.slowlog = listCreate();
     server.slowlog_entry_id = 0;
@@ -119,26 +110,47 @@ void slowlogInit(void) {
 
 /* Push a new entry into the slow log.
  * This function will make sure to trim the slow log accordingly to the
- * configured max length. */
+ * configured max length.
+ * ---------------------------------------------------------------------
+ * 将一个新的entry添加到慢日志中去
+ *
+ * 该函数将会根据配置的slowlog_max_len去修剪slowlog中的日志
+ *
+ * */
+
 void slowlogPushEntryIfNeeded(client *c, robj **argv, int argc, long long duration) {
+    //检测slowlog是否开启
     if (server.slowlog_log_slower_than < 0) return; /* Slowlog disabled */
     if (duration >= server.slowlog_log_slower_than)
+        /*
+         * 从头部开始添加
+         */
         listAddNodeHead(server.slowlog,
                         slowlogCreateEntry(c,argv,argc,duration));
 
-    /* Remove old entries if needed. */
+    /* Remove old entries if needed.
+     * -----------------------------
+     * 若当前的list长度大于配置的配置的长度，那么将会进行删除（尾部删除）
+     * */
     while (listLength(server.slowlog) > server.slowlog_max_len)
         listDelNode(server.slowlog,listLast(server.slowlog));
 }
 
-/* Remove all the entries from the current slow log. */
+/* Remove all the entries from the current slow log.
+ * ------------------------------------------------
+ * 循环删除server.slowlog list中的节点
+ * */
 void slowlogReset(void) {
     while (listLength(server.slowlog) > 0)
         listDelNode(server.slowlog,listLast(server.slowlog));
 }
 
-/* The SLOWLOG command. Implements all the subcommands needed to handle the
- * Redis slow log. */
+/* The SLOWLOG command. Implements all the subcommands needed to handle the Redis slow log.
+ * -----------------------------------------------------------------
+ *
+ * slowlog的命令实现，包含了slow日志所需要的所有子命令
+ *
+ * */
 void slowlogCommand(client *c) {
     if (c->argc == 2 && !strcasecmp(c->argv[1]->ptr,"help")) {
         const char *help[] = {
@@ -150,11 +162,20 @@ void slowlogCommand(client *c) {
 NULL
         };
         addReplyHelp(c, help);
+        /*
+         * 重置命令
+         */
     } else if (c->argc == 2 && !strcasecmp(c->argv[1]->ptr,"reset")) {
         slowlogReset();
         addReply(c,shared.ok);
+        /*
+         * len命令，求出长度
+         */
     } else if (c->argc == 2 && !strcasecmp(c->argv[1]->ptr,"len")) {
         addReplyLongLong(c,listLength(server.slowlog));
+        /*
+         * get命令
+         */
     } else if ((c->argc == 2 || c->argc == 3) &&
                !strcasecmp(c->argv[1]->ptr,"get"))
     {
@@ -167,9 +188,14 @@ NULL
         if (c->argc == 3 &&
             getLongFromObjectOrReply(c,c->argv[2],&count,NULL) != C_OK)
             return;
-
+        /*
+         * 将server.slowlog的list构造成迭代器
+         */
         listRewind(server.slowlog,&li);
         totentries = addDeferredMultiBulkLength(c);
+        /*
+         * 开始遍历，打印出结果
+         */
         while(count-- && (ln = listNext(&li))) {
             int j;
 

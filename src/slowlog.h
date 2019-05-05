@@ -30,7 +30,10 @@
 #define SLOWLOG_ENTRY_MAX_ARGC 32
 #define SLOWLOG_ENTRY_MAX_STRING 128
 
-/* This structure defines an entry inside the slow log list */
+/* This structure defines an entry inside the slow log list
+ * --------------------------------------------------------
+ * slowlog list中使用的entry结构
+ * */
 typedef struct slowlogEntry {
     robj **argv;
     int argc;

@@ -2248,6 +2248,9 @@ void initServer(void) {
     if (server.cluster_enabled) clusterInit();
     replicationScriptCacheInit();
     scriptingInit(1);
+    /*
+     *
+     */
     slowlogInit();
     latencyMonitorInit();
     bioInit();
@@ -2529,6 +2532,9 @@ void call(client *c, int flags) {
 
     /* Log the command into the Slow log if needed, and populate the
      * per-command statistics that we show in INFO commandstats. */
+    /*
+     * 若redis配置中开启了慢日志，那么将命令添加到慢日志中
+     */
     if (flags & CMD_CALL_SLOWLOG && c->cmd->proc != execCommand) {
         char *latency_event = (c->cmd->flags & CMD_FAST) ?
                               "fast-command" : "command";
