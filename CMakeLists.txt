@@ -19,6 +19,10 @@ include_directories(deps/lua/src)
 include_directories(src)
 
 add_executable(redis
+        cmake-build-debug/cmake_install.cmake
+        cmake-build-debug/CMakeCache.txt
+        cmake-build-debug/Makefile
+        cmake-build-debug/redis.cbp
         deps/hiredis/adapters/ae.h
         deps/hiredis/adapters/glib.h
         deps/hiredis/adapters/ivykis.h
@@ -528,91 +532,139 @@ add_executable(redis
         src/modules/testmodule.c
         src/adlist.c
         src/adlist.h
+        src/adlist.o
         src/ae.c
         src/ae.h
+        src/ae.o
         src/ae_epoll.c
         src/ae_evport.c
         src/ae_kqueue.c
         src/ae_select.c
         src/anet.c
         src/anet.h
+        src/anet.o
         src/aof.c
+        src/aof.o
         src/asciilogo.h
         src/atomicvar.h
         src/bio.c
         src/bio.h
+        src/bio.o
         src/bitops.c
+        src/bitops.o
         src/blocked.c
+        src/blocked.o
         src/childinfo.c
+        src/childinfo.o
         src/cluster.c
         src/cluster.h
+        src/cluster.o
         src/config.c
         src/config.h
+        src/config.o
         src/crc16.c
+        src/crc16.o
         src/crc64.c
         src/crc64.h
+        src/crc64.o
         src/db.c
+        src/db.o
         src/debug.c
+        src/debug.o
         src/debugmacro.h
         src/defrag.c
+        src/defrag.o
         src/dict.c
         src/dict.h
+        src/dict.o
         src/endianconv.c
         src/endianconv.h
+        src/endianconv.o
         src/evict.c
+        src/evict.o
         src/expire.c
+        src/expire.o
         src/fmacros.h
         src/geo.c
         src/geo.h
+        src/geo.o
         src/geohash.c
         src/geohash.h
+        src/geohash.o
         src/geohash_helper.c
         src/geohash_helper.h
+        src/geohash_helper.o
         src/help.h
         src/hyperloglog.c
+        src/hyperloglog.o
         src/intset.c
         src/intset.h
+        src/intset.o
         src/latency.c
         src/latency.h
+        src/latency.o
         src/lazyfree.c
+        src/lazyfree.o
         src/listpack.c
         src/listpack.h
+        src/listpack.o
         src/listpack_malloc.h
         src/localtime.c
+        src/localtime.o
         src/lolwut.c
+        src/lolwut.o
         src/lolwut5.c
+        src/lolwut5.o
         src/lzf.h
         src/lzf_c.c
+        src/lzf_c.o
         src/lzf_d.c
+        src/lzf_d.o
         src/lzfP.h
         src/Makefile
         src/memtest.c
+        src/memtest.o
         src/mkreleasehdr.sh
         src/module.c
+        src/module.o
         src/multi.c
+        src/multi.o
         src/networking.c
+        src/networking.o
         src/notify.c
+        src/notify.o
         src/object.c
+        src/object.o
         src/pqsort.c
         src/pqsort.h
+        src/pqsort.o
         src/pubsub.c
+        src/pubsub.o
         src/quicklist.c
         src/quicklist.h
+        src/quicklist.o
         src/rand.c
         src/rand.h
+        src/rand.o
         src/rax.c
         src/rax.h
+        src/rax.o
         src/rax_malloc.h
         src/rdb.c
         src/rdb.h
+        src/rdb.o
         src/redis-benchmark
         src/redis-benchmark.c
+        src/redis-benchmark.o
         src/redis-check-aof
         src/redis-check-aof.c
+        src/redis-check-aof.o
         src/redis-check-rdb
         src/redis-check-rdb.c
+        src/redis-check-rdb.o
         src/redis-cli
         src/redis-cli.c
+        src/redis-cli.o
         src/redis-sentinel
         src/redis-server
         src/redis-trib.rb
@@ -620,45 +672,69 @@ add_executable(redis
         src/redismodule.h
         src/release.c
         src/release.h
+        src/release.o
         src/replication.c
+        src/replication.o
         src/rio.c
         src/rio.h
+        src/rio.o
         src/scripting.c
+        src/scripting.o
         src/sds.c
         src/sds.h
+        src/sds.o
         src/sdsalloc.h
         src/sentinel.c
+        src/sentinel.o
         src/server.c
         src/server.h
+        src/server.o
         src/setproctitle.c
+        src/setproctitle.o
         src/sha1.c
         src/sha1.h
+        src/sha1.o
         src/siphash.c
+        src/siphash.o
         src/slowlog.c
         src/slowlog.h
+        src/slowlog.o
         src/solarisfixes.h
         src/sort.c
+        src/sort.o
         src/sparkline.c
         src/sparkline.h
+        src/sparkline.o
         src/stream.h
         src/syncio.c
+        src/syncio.o
         src/t_hash.c
+        src/t_hash.o
         src/t_list.c
+        src/t_list.o
         src/t_set.c
+        src/t_set.o
         src/t_stream.c
+        src/t_stream.o
         src/t_string.c
+        src/t_string.o
         src/t_zset.c
+        src/t_zset.o
         src/testhelp.h
         src/util.c
         src/util.h
+        src/util.o
         src/valgrind.sup
         src/version.h
         src/ziplist.c
         src/ziplist.h
+        src/ziplist.o
         src/zipmap.c
         src/zipmap.h
+        src/zipmap.o
         src/zmalloc.c
         src/zmalloc.h
+        src/zmalloc.o
         tests/assets/default.conf
         tests/assets/encodings.rdb
         tests/assets/hash-zipmap.rdb
@@ -782,16 +858,7 @@ add_executable(redis
         utils/redis_init_script.tpl
         utils/speed-regression.tcl
         utils/whatisdoing.sh
-        00-RELEASENOTES
-        BUGS
-        CONTRIBUTING
-        COPYING
-        INSTALL
-        Makefile
-        MANIFESTO
+        CMakeLists.txt
         README.md
         redis.conf
-        runtest
-        runtest-cluster
-        runtest-sentinel
         sentinel.conf)

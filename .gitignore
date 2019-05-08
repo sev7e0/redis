@@ -30,3 +30,4 @@ deps/lua/src/liblua.a
 *.dSYM
 Makefile.dep
 .vscode
+cmake-build-debug/*
