@@ -153,6 +153,10 @@ void activeExpireCycle(int type) {
         /* Increment the DB now so we are sure if we run out of time
          * in the current DB we'll restart from the next. This allows to
          * distribute the time evenly across DBs. */
+        /*
+         * 现在递增数据库，以便我们确定当前数据库中的时间不足，我们将从下一个数据
+         * 库重新启动。这允许在DB之间均匀地分配时间。
+         */
         current_db++;
 
         /* Continue to expire if at the end of the cycle more than 25%
@@ -171,9 +175,8 @@ void activeExpireCycle(int type) {
             slots = dictSlots(db->expires);
             now = mstime();
 
-            /* When there are less than 1% filled slots getting random
-             * keys is expensive, so stop here waiting for better times...
-             * The dictionary will be resized asap. */
+            /* 当填充的插槽少于1％变得随机时key很贵，所以停在这里等待更好的时间......
+             * 字典将尽快调整大小。 */
             if (num && slots > DICT_HT_INITIAL_SIZE &&
                 (num*100/slots < 1)) break;
 
@@ -182,10 +185,10 @@ void activeExpireCycle(int type) {
             expired = 0;
             ttl_sum = 0;
             ttl_samples = 0;
-
+            /*设置挑选的过期键的数量*/
             if (num > ACTIVE_EXPIRE_CYCLE_LOOKUPS_PER_LOOP)
                 num = ACTIVE_EXPIRE_CYCLE_LOOKUPS_PER_LOOP;
-
+            /*循环挑选过期键*/
             while (num--) {
                 dictEntry *de;
                 long long ttl;
@@ -194,7 +197,7 @@ void activeExpireCycle(int type) {
                 ttl = dictGetSignedIntegerVal(de)-now;
                 if (activeExpireCycleTryExpire(db,de,now)) expired++;
                 if (ttl > 0) {
-                    /* We want the average TTL of keys yet not expired. */
+                    /* 我们希望key的平均TTL尚未过期。*/
                     ttl_sum += ttl;
                     ttl_samples++;
                 }
@@ -213,9 +216,7 @@ void activeExpireCycle(int type) {
                 db->avg_ttl = (db->avg_ttl/50)*49 + (avg_ttl/50);
             }
 
-            /* We can't block forever here even if there are many keys to
-             * expire. So after a given amount of milliseconds return to the
-             * caller waiting for the other active expire cycle. */
+            /* 即使有很多key到期，我们也无法永远阻止。因此，在给定的毫秒数后，返回调用者等待另一个活动的到期周期。*/
             if ((iteration & 0xf) == 0) { /* check once every 16 iterations. */
                 elapsed = ustime()-start;
                 if (elapsed > timelimit) {
@@ -224,8 +225,8 @@ void activeExpireCycle(int type) {
                     break;
                 }
             }
-            /* We don't repeat the cycle if there are less than 25% of keys
-             * found expired in the current DB. */
+            /* 如果密钥少于25％，我们不会重复循环
+             * 发现当前数据库已过期。 */
         } while (expired > ACTIVE_EXPIRE_CYCLE_LOOKUPS_PER_LOOP/4);
     }
 
@@ -282,6 +283,9 @@ dict *slaveKeysWithExpire = NULL;
 
 /* Check the set of keys created by the master with an expire set in order to
  * check if they should be evicted. */
+/*
+ * 检查master发送的过期key集合，判断是否需要删除他们
+ */
 void expireSlaveKeys(void) {
     if (slaveKeysWithExpire == NULL ||
         dictSize(slaveKeysWithExpire) == 0) return;

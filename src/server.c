@@ -1015,6 +1015,9 @@ void clientsCron(void) {
 void databasesCron(void) {
     /* Expire keys by random sampling. Not required for slaves
      * as master will synthesize DELs for us. */
+    /*
+     * 随机获取过期的key，slave节点不需要，因为master会发送消息
+     */
     if (server.active_expire_enabled && server.masterhost == NULL) {
         activeExpireCycle(ACTIVE_EXPIRE_CYCLE_SLOW);
     } else if (server.masterhost != NULL) {
@@ -1240,6 +1243,9 @@ int serverCron(struct aeEventLoop *eventLoop, long long id, void *clientData) {
     clientsCron();
 
     /* Handle background operations on Redis databases. */
+    /*
+     * 处理Redis数据库上的后台操作。
+     */
     databasesCron();
 
     /* Start a scheduled AOF rewrite if this was requested by the user while

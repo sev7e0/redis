@@ -67,6 +67,9 @@ static struct evictionPoolEntry *EvictionPoolLRU;
 /* Return the LRU clock, based on the clock resolution. This is a time
  * in a reduced-bits format that can be used to set and check the
  * object->lru field of redisObject structures. */
+/*
+ * 获取lru的时钟
+ */
 unsigned int getLRUClock(void) {
     return (mstime()/LRU_CLOCK_RESOLUTION) & LRU_CLOCK_MAX;
 }
@@ -402,6 +405,7 @@ int getMaxmemoryState(size_t *total, size_t *logical, size_t *tofree, float *lev
     if (total) *total = mem_reported;
 
     /* We may return ASAP if there is no need to compute the level. */
+    //判断当前内存是否已经超过最大内存，没有的话返回ok==0
     int return_ok_asap = !server.maxmemory || mem_reported <= server.maxmemory;
     if (return_ok_asap && !level) return C_OK;
 
@@ -446,8 +450,9 @@ int getMaxmemoryState(size_t *total, size_t *logical, size_t *tofree, float *lev
 int freeMemoryIfNeeded(void) {
     /* By default replicas should ignore maxmemory
      * and just be masters exact copies. */
+    //若是slave节点不进行处理
     if (server.masterhost && server.repl_slave_ignore_maxmemory) return C_OK;
-
+    //获取到当前内存状态mem_reported
     size_t mem_reported, mem_tofree, mem_freed;
     mstime_t latency, eviction_latency;
     long long delta;
@@ -457,11 +462,12 @@ int freeMemoryIfNeeded(void) {
      * POV of clients not being able to write, but also from the POV of
      * expires and evictions of keys not being performed. */
     if (clientsArePaused()) return C_OK;
+    //判断当前内存是否已经超过最大内存，没有的话返回ok=
     if (getMaxmemoryState(&mem_reported,NULL,&mem_tofree,NULL) == C_OK)
         return C_OK;
 
     mem_freed = 0;
-
+    //若当前maxmemory_policy设置为noeviction（不淘汰策略），则不进行处理
     if (server.maxmemory_policy == MAXMEMORY_NO_EVICTION)
         goto cant_free; /* We need to free memory, but policy forbids. */
 
@@ -483,9 +489,8 @@ int freeMemoryIfNeeded(void) {
             while(bestkey == NULL) {
                 unsigned long total_keys = 0, keys;
 
-                /* We don't want to make local-db choices when expiring keys,
-                 * so to start populate the eviction pool sampling keys from
-                 * every DB. */
+                /* 不希望在key到期时进行local-db选择，
+                 * 所以开始填充驱逐池采样key在每个DB。 */
                 for (i = 0; i < server.dbnum; i++) {
                     db = server.db+i;
                     dict = (server.maxmemory_policy & MAXMEMORY_FLAG_ALLKEYS) ?
@@ -497,7 +502,7 @@ int freeMemoryIfNeeded(void) {
                 }
                 if (!total_keys) break; /* No keys to evict. */
 
-                /* Go backward from best to worst element to evict. */
+                /* 从最好到最差的元素向后退出。 */
                 for (k = EVPOOL_SIZE-1; k >= 0; k--) {
                     if (pool[k].key == NULL) continue;
                     bestdbid = pool[k].dbid;

@@ -1198,8 +1198,7 @@ sds getMemoryDoctorReport(void) {
 
 /* Set the object LRU/LFU depending on server.maxmemory_policy.
  * The lfu_freq arg is only relevant if policy is MAXMEMORY_FLAG_LFU.
- * The lru_idle and lru_clock args are only relevant if policy
- * is MAXMEMORY_FLAG_LRU.
+ * The lru_idle and lru_clock args are only relevant if policy is MAXMEMORY_FLAG_LRU.
  * Either or both of them may be <0, in that case, nothing is set. */
 void objectSetLRUOrLFU(robj *val, long long lfu_freq, long long lru_idle,
                        long long lru_clock) {
